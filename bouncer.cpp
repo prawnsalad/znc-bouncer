@@ -11,8 +11,8 @@
 
 #include "bouncer.h"
 
-const char *command = "BOUNCER";
-const char *version = "2";
+const char *Bouncer::command = "BOUNCER";
+const char *Bouncer::version = "2";
 
 bool Bouncer::OnLoad(const CString& sArgs, CString& sMessage) {
 	(void) sArgs;
