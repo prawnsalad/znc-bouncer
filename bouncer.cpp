@@ -220,7 +220,7 @@ void Bouncer::subcmd_listbuffers(std::vector<CString> &replies, const CString &p
 		replies.push_back(os.str());
 	}
 
-	replies.push_back("listbuffers RPL_OK");
+	replies.push_back("listbuffers " + network_name + " RPL_OK");
 }
 
 void Bouncer::subcmd_addnetwork(std::vector<CString> &replies, const CString &params) {
@@ -402,6 +402,7 @@ void Bouncer::sendSupportedModes(CClient *client) {
 	std::ostringstream os;
 	os << ":irc.host 005 "
 	   << client->GetNick()
+	   << ' '
 	   << Bouncer::command
 	   << '='
 	   << Bouncer::version
