@@ -18,6 +18,7 @@ public:
 	void subcmd_disconnect(std::vector<CString> &replies, const CString &params);
 	void subcmd_listnetworks(std::vector<CString> &replies, const CString &params);
 	void subcmd_listbuffers(std::vector<CString> &replies, const CString &params);
+	void subcmd_changebuffer(std::vector<CString> &replies, const CString &params);
 	void subcmd_addnetwork(std::vector<CString> &replies, const CString &params);
 	void subcmd_changenetwork(std::vector<CString> &replies, const CString &params);
 	void subcmd_delnetwork(std::vector<CString> &replies, const CString &params);

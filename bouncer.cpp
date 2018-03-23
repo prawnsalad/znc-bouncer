@@ -1,4 +1,5 @@
 #include <sstream>
+#include <fstream>
 #include <znc/znc.h>
 #include <znc/main.h>
 #include <znc/IRCNetwork.h>
@@ -61,6 +62,7 @@ CModule::EModRet Bouncer::OnUserRaw(CString &sLine) {
 		else if (subcmd == "disconnect")    this->subcmd_disconnect(reply, params);
 		else if (subcmd == "listnetworks")  this->subcmd_listnetworks(reply, params);
 		else if (subcmd == "listbuffers")   this->subcmd_listbuffers(reply, params);
+		else if (subcmd == "changebuffer")  this->subcmd_changebuffer(reply, params);
 		else if (subcmd == "addnetwork")    this->subcmd_addnetwork(reply, params);
 		else if (subcmd == "changenetwork") this->subcmd_changenetwork(reply, params);
 		else if (subcmd == "delnetwork")    this->subcmd_delnetwork(reply, params);
@@ -185,6 +187,9 @@ void Bouncer::subcmd_listbuffers(std::vector<CString> &replies, const CString &p
 		return;
 	}
 
+	CString userHash = user->GetUserName().MD5();
+	CString mpath = this->GetModPath() + "/";
+
 	const std::vector<CQuery*> &queries = net->GetQueries();
 	for (const CQuery *query : queries) {
 		if (!query) continue;
@@ -194,6 +199,16 @@ void Bouncer::subcmd_listbuffers(std::vector<CString> &replies, const CString &p
 		os << "listbuffers "
 		   << "network=" << net->GetName() << ";"
 		   << "buffer="  << query->GetName();
+
+		CString file = mpath + query->GetName().MD5() + "-" + userHash + ".txt";
+		std::ifstream timestampfile(file);
+
+		if (timestampfile.good()) {
+			char buf[256];
+			timestampfile.getline(buf, sizeof(buf));
+
+			os << ";seen=" << buf;
+		}
 
 		replies.push_back(os.str());
 	}
@@ -211,6 +226,16 @@ void Bouncer::subcmd_listbuffers(std::vector<CString> &replies, const CString &p
 		if (!chan->IsDisabled())
 			os << ";joined=1";
 
+		CString file = mpath + chan->GetName().MD5() + "-" + userHash + ".txt";
+		std::ifstream timestampfile(file);
+
+		if (timestampfile.good()) {
+			char buf[256];
+			timestampfile.getline(buf, sizeof(buf));
+
+			os << ";seen=" << buf;
+		}
+
 		CString topic = chan->GetTopic();
 		topic.Replace(" ", "\\s");
 		// The python plugin did something with UTF-8 here. Not sure if needed?
@@ -221,6 +246,49 @@ void Bouncer::subcmd_listbuffers(std::vector<CString> &replies, const CString &p
 	}
 
 	replies.push_back("listbuffers " + network_name + " RPL_OK");
+}
+
+void Bouncer::subcmd_changebuffer(std::vector<CString> &replies, const CString &params) {
+	CUser *user = this->GetUser();
+
+	CString network_name = params.Token(0);
+	CString buffer_name = params.Token(0);
+	CString options = params.Token(1, true);
+
+	CIRCNetwork *net = 0;
+
+	if (user)
+		net = user->FindNetwork(network_name);
+
+	if (!net) {
+		replies.push_back("changebuffer " + network_name + " * ERR_NETNOTFOUND");
+		return;
+	}
+
+	CQuery *query = net->FindQuery(buffer_name);
+	CChan *chan = net->FindChan(buffer_name);
+
+	if (!chan || !query) {
+		replies.push_back("changebuffer " + network_name + " " + buffer_name + " ERR_NETNOTFOUND");
+		return;
+	}
+
+	CString key = options.Token(0, false, "=");
+	CString val = options.Token(1, true, "=");
+
+	unsigned y, m, d, H, M, S;
+	int res = sscanf(val.c_str(), "%4u-%2u-%2uT%2u:%2u:%2uZ", &y, &m, &d, &H, &M, &S);
+	if (key != "seen" || res != 6) {
+		replies.push_back("changebuffer " + network_name + " " + buffer_name + " ERR_INVALIDARGS");
+		return;
+	}
+
+	// Write timestamp to user file
+	CString file = this->GetModPath() + "/" + buffer_name.MD5() + "-" + user->GetUserName().MD5() + ".txt";
+	std::fstream stampout(file, std::fstream::out | std::fstream::trunc);
+	stampout << y << "-" << m << "-" << d << "T" << H << ":" << M << ":" << S << "Z";
+
+	replies.push_back("changebuffer " + network_name + " " + buffer_name + " RPL_OK");
 }
 
 void Bouncer::subcmd_addnetwork(std::vector<CString> &replies, const CString &params) {
@@ -294,7 +362,7 @@ void Bouncer::subcmd_addnetwork(std::vector<CString> &replies, const CString &pa
 	if (port && network_host != "") {
 		net_add->AddServer(network_host, port, "", ssl);
 	}
-	
+
 	CZNC::Get().WriteConfig();
 	replies.push_back("addnetwork " + network_name + " RPL_OK");
 }
@@ -304,7 +372,7 @@ void Bouncer::subcmd_changenetwork(std::vector<CString> &replies, const CString 
 
 	CString network_name = params.Token(0);
 	CString options = params.Token(1, true);
-	
+
 	CIRCNetwork *net = 0;
 
 	if (user)
