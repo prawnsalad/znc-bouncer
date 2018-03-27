@@ -394,7 +394,7 @@ void Bouncer::subcmd_changenetwork(std::vector<CString> &replies, const CString 
 	bool ssl = server->IsSSL();
 
 	VCString parts;
-	params.Split(";", parts);
+	params.Token(1).Split(";", parts);
 	for (CString part : parts) {
 		CString key = part.Token(0, false, "=");
 		CString val = part.Token(1, false, "=");
