@@ -269,7 +269,7 @@ void Bouncer::subcmd_changebuffer(std::vector<CString> &replies, const CString &
 	CChan *chan = net->FindChan(buffer_name);
 
 	if (!chan || !query) {
-		replies.push_back("changebuffer " + network_name + " " + buffer_name + " ERR_NETNOTFOUND");
+		replies.push_back("changebuffer " + network_name + " " + buffer_name + " ERR_BUFFERNOTFOUND");
 		return;
 	}
 
