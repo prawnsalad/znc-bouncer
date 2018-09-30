@@ -314,7 +314,7 @@ void Bouncer::subcmd_addnetwork(std::vector<CString> &replies, const CString &pa
 		CString key = part.Token(0, false, "=");
 		CString val = part.Token(1, false, "=");
 
-		if (key == "" || val == "") {
+		if (key == "") {
 			replies.push_back("addnetwork * ERR_INVALIDFORMAT");
 			return;
 		}
@@ -399,7 +399,7 @@ void Bouncer::subcmd_changenetwork(std::vector<CString> &replies, const CString 
 		CString key = part.Token(0, false, "=");
 		CString val = part.Token(1, false, "=");
 
-		if (key == "" || val == "") {
+		if (key == "") {
 			replies.push_back("changenetwork " + network_name + " ERR_INVALIDFORMAT");
 			return;
 		}
